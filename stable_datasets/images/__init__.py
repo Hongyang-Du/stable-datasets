@@ -2,6 +2,7 @@
 
 from .arabic_characters import ArabicCharacters
 from .arabic_digits import ArabicDigits
+from .aid_scene import AIDScene
 from .awa2 import AWA2
 from .beans import Beans
 from .cars3d import Cars3D
@@ -50,6 +51,7 @@ from .tiny_imagenet_c import TinyImagenetC
 __all__ = [
     "ArabicCharacters",
     "ArabicDigits",
+    "AIDScene",
     "AWA2",
     "Beans",
     "Cars196",
