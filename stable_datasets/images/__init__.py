@@ -32,6 +32,7 @@ from .hasy_v2 import HASYv2
 from .imagenet_1k import ImageNet1K
 from .imagenet_10 import Imagenette
 from .imagenet_100 import ImageNet100
+from .inria_aerial_image_labeling import InriaAerialImageLabeling
 from .k_mnist import KMNIST
 from .linnaeus5 import Linnaeus5
 from .med_mnist import MedMNIST
@@ -79,6 +80,7 @@ __all__ = [
     "ImageNet1K",
     "ImageNet100",
     "Imagenette",
+    "InriaAerialImageLabeling",
     "KMNIST",
     "Linnaeus5",
     "MedMNIST",

@@ -6,24 +6,39 @@ import pytest
 from PIL import Image
 
 from stable_datasets.images.aid_scene import AIDScene
+from stable_datasets.utils import KAGGLE_CLI_SETUP_INSTRUCTIONS
 
 
 def test_aid_scene_dataset():
     if shutil.which("kaggle") is None:
         warnings.warn(
-            "Kaggle CLI not found. Install it with `pip install kaggle` and configure ~/.kaggle/kaggle.json.",
+            "Kaggle CLI not found.\n" + KAGGLE_CLI_SETUP_INSTRUCTIONS,
             stacklevel=2,
         )
-        pytest.skip("Kaggle CLI not found. Install `kaggle` and configure authentication to run this test.")
+        pytest.skip("Kaggle CLI not found. See warning above for install and API key setup.")
 
     try:
         aid_all = AIDScene(split="all")
     except RuntimeError as error:
-        if "Kaggle download failed" in str(error):
+        err = str(error)
+        if "[kaggle:SIGKILL]" in err:
+            warnings.warn(
+                "Kaggle download was killed (SIGKILL), often due to low memory.\n" + err,
+                stacklevel=2,
+            )
+            pytest.skip("Kaggle download SIGKILL (likely OOM). Pre-download in a shell, then re-run.")
+        if "Kaggle download failed" in err or "[kaggle:failed]" in err:
+            if "KeyError" in err and "username" in err:
+                warnings.warn(
+                    "Kaggle API credentials are not configured.\n" + KAGGLE_CLI_SETUP_INSTRUCTIONS,
+                    stacklevel=2,
+                )
+                pytest.skip(
+                    "Kaggle credentials missing (see warning above). "
+                    "Configure ~/.kaggle/kaggle.json or export KAGGLE_USERNAME and KAGGLE_KEY, then re-run."
+                )
             pytest.fail(
-                "Kaggle download failed. Please configure Kaggle API credentials at "
-                "~/.kaggle/kaggle.json (with 'username' and 'key') and run "
-                "`chmod 600 ~/.kaggle/kaggle.json`."
+                "Kaggle download failed. Fix authentication or network, then retry.\n" + KAGGLE_CLI_SETUP_INSTRUCTIONS
             )
         raise
     assert len(aid_all) > 0, "Expected non-empty dataset."

@@ -53,11 +53,28 @@ Usage Example
 Kaggle Requirements
 -------------------
 
-This dataset requires Kaggle API authentication because the source is hosted on Kaggle:
+This dataset is downloaded with the **Kaggle CLI**. Install it and configure an API key:
 
-1. Install CLI: ``pip install kaggle``
-2. Place API token at ``~/.kaggle/kaggle.json``
-3. Ensure permission is restricted: ``chmod 600 ~/.kaggle/kaggle.json``
+.. code-block:: bash
+
+    pip install kaggle
+
+**Option A — token file (recommended)**
+
+.. code-block:: bash
+
+    mkdir -p ~/.kaggle
+    mv ~/Downloads/kaggle.json ~/.kaggle/kaggle.json
+    chmod 600 ~/.kaggle/kaggle.json
+
+Create ``kaggle.json`` from Kaggle: **Account → API → Create New Token**.
+
+**Option B — environment variables (current shell only)**
+
+.. code-block:: bash
+
+    export KAGGLE_USERNAME="<your_kaggle_username>"
+    export KAGGLE_KEY="<your_api_key>"
 
 References
 ----------

@@ -5,7 +5,7 @@ from pathlib import Path
 from stable_datasets.schema import ClassLabel, DatasetInfo, Features, Version
 from stable_datasets.schema import Image as ImageFeature
 from stable_datasets.splits import SplitGenerator
-from stable_datasets.utils import BaseDatasetBuilder
+from stable_datasets.utils import BaseDatasetBuilder, KAGGLE_CLI_SETUP_INSTRUCTIONS, kaggle_cli_failure_message
 
 
 class AIDScene(BaseDatasetBuilder):
@@ -13,8 +13,6 @@ class AIDScene(BaseDatasetBuilder):
 
     VERSION = Version("1.0.0")
     DATASET_ID = "jiayuanchengala/aid-scene-classification-datasets"
-    ZIP_FILENAME = "aid-scene-classification-datasets.zip"
-    EXTRACT_DIRNAME = "aid_scene_classification"
     SINGLE_SPLIT = "all"
     LABELS = [
         "Airport",
@@ -55,16 +53,29 @@ class AIDScene(BaseDatasetBuilder):
             "all": "kaggle://jiayuanchengala/aid-scene-classification-datasets",
         },
         "citation": """@article{xia2017aid,
-  title={AID: A benchmark data set for performance evaluation of aerial scene classification},
-  author={Xia, Gui-Song and Hu, Jingwen and Hu, Fan and Shi, Baoguang and Bai, Xiang and Zhong, Yanfei and Zhang, Liangpei and Lu, Xiaoqiang},
-  journal={IEEE Transactions on Geoscience and Remote Sensing},
-  volume={55},
-  number={7},
-  pages={3965--3981},
-  year={2017},
-  publisher={IEEE}
-}""",
+            title={AID: A benchmark data set for performance evaluation of aerial scene classification},
+            author={Xia, Gui-Song and Hu, Jingwen and Hu, Fan and Shi, Baoguang and Bai, Xiang and Zhong, Yanfei and Zhang, Liangpei and Lu, Xiaoqiang},
+            journal={IEEE Transactions on Geoscience and Remote Sensing},
+            volume={55},
+            number={7},
+            pages={3965--3981},
+            year={2017},
+            publisher={IEEE}
+            }""",
     }
+
+    @classmethod
+    def _kaggle_slug(cls) -> str:
+        """Dataset slug (last path segment); Kaggle names the zip ``{slug}.zip``."""
+        return cls.DATASET_ID.split("/")[-1]
+
+    @classmethod
+    def _local_zip_path(cls, download_dir: Path) -> Path:
+        return download_dir / f"{cls._kaggle_slug()}.zip"
+
+    @classmethod
+    def _local_extract_root(cls, download_dir: Path) -> Path:
+        return download_dir / f"{cls._kaggle_slug().replace('-', '_')}_extract"
 
     def _info(self):
         source = self._source()
@@ -93,14 +104,15 @@ class AIDScene(BaseDatasetBuilder):
         if download_dir is None:
             raise RuntimeError("Raw download directory is not initialized.")
 
-        extract_dir = Path(download_dir) / self.EXTRACT_DIRNAME
+        download_dir = Path(download_dir)
+        extract_dir = self._local_extract_root(download_dir)
         image_root = self._find_image_root(extract_dir)
         if image_root is not None:
             return image_root
 
-        zip_path = Path(download_dir) / self.ZIP_FILENAME
+        zip_path = self._local_zip_path(download_dir)
         if not zip_path.exists():
-            self._download_from_kaggle(Path(download_dir))
+            self._download_from_kaggle(download_dir)
 
         extract_dir.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zip_path, "r") as archive:
@@ -130,14 +142,10 @@ class AIDScene(BaseDatasetBuilder):
             )
         except FileNotFoundError as error:
             raise RuntimeError(
-                "Kaggle CLI is not installed. Install with `pip install kaggle` and configure ~/.kaggle/kaggle.json."
+                "Kaggle CLI was not found (the `kaggle` command is not on PATH)." + KAGGLE_CLI_SETUP_INSTRUCTIONS
             ) from error
         except subprocess.CalledProcessError as error:
-            stderr = (error.stderr or "").strip()
-            raise RuntimeError(
-                "Kaggle download failed. Ensure `kaggle` CLI is authenticated via ~/.kaggle/kaggle.json. "
-                f"Error: {stderr}"
-            ) from error
+            raise RuntimeError(kaggle_cli_failure_message(self.DATASET_ID, error)) from error
 
     def _find_image_root(self, root: Path) -> Path | None:
         if not root.exists():
